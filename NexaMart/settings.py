@@ -42,16 +42,16 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     "rest_framework",
-    "users",
-    "catalog",
-    "cart",
-    "orders",
+    'api',
+    'product',
+    'users',
+    'orders',
     "payments",
-    "core",
-    "reviews",
+    "debug_toolbar",
 ]
 
 MIDDLEWARE = [
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -80,6 +80,11 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'NexaMart.wsgi.application'
 
+INTERNAL_IPS = [
+    # ...
+    "127.0.0.1",
+    # ...
+]
 
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
