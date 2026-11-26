@@ -25,6 +25,7 @@ class SellerProfile(models.Model):
     slug = models.SlugField(max_length=255, unique=True, blank=True)
     description = models.TextField(blank=True, null=True)
     logo = models.ImageField(upload_to="sellers/logos/", blank=True, null=True)
+    cover_image = models.ImageField(upload_to="sellers/covers/", blank=True, null=True)
     phone = models.CharField(max_length=20, blank=True, null=True)
     status = models.CharField(
         max_length=20,

@@ -17,6 +17,7 @@ class SellerProfileSerializer(serializers.ModelSerializer):
             'slug',
             'description',
             'logo',
+            'cover_image',
             'phone',
             'status',
             'commission_rate',
@@ -29,10 +30,45 @@ class SellerProfileSerializer(serializers.ModelSerializer):
         return f"{obj.user.first_name} {obj.user.last_name}".strip() or obj.user.email
 
 
+class AdminSellerProfileSerializer(serializers.ModelSerializer):
+    user_email = serializers.EmailField(source='user.email', read_only=True)
+    user_name = serializers.SerializerMethodField()
+    total_products = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SellerProfile
+        fields = [
+            'id',
+            'user',
+            'user_email',
+            'user_name',
+            'store_name',
+            'slug',
+            'description',
+            'logo',
+            'cover_image',
+            'phone',
+            'status',
+            'commission_rate',
+            'total_products',
+            'average_rating',
+            'total_reviews',
+            'created_at',
+            'updated_at'
+        ]
+        read_only_fields = ['id', 'user', 'slug', 'created_at', 'updated_at']
+
+    def get_user_name(self, obj):
+        return f"{obj.user.first_name} {obj.user.last_name}".strip() or obj.user.email
+
+    def get_total_products(self, obj):
+        return obj.products.count()
+
+
 class SellerApplicationSerializer(serializers.ModelSerializer):
     class Meta:
         model = SellerProfile
-        fields = ['store_name', 'description', 'phone', 'logo']
+        fields = ['store_name', 'description', 'phone', 'logo', 'cover_image']
 
     def validate_store_name(self, value):
         if SellerProfile.objects.filter(store_name__iexact=value).exists():
@@ -53,17 +89,18 @@ class SellerApplicationSerializer(serializers.ModelSerializer):
 class PublicStoreSerializer(serializers.ModelSerializer):
     class Meta:
         model = SellerProfile
-        fields = ['id', 'store_name', 'slug', 'description', 'logo', 'phone', 'created_at']
+        fields = ['id', 'store_name', 'slug', 'description', 'logo', 'cover_image', 'phone', 'created_at']
 
 
 class PublicStoreDetailSerializer(serializers.ModelSerializer):
     total_products = serializers.SerializerMethodField()
+    user_email = serializers.EmailField(source='user.email', read_only=True)
 
     class Meta:
         model = SellerProfile
         fields = [
-            'id', 'store_name', 'slug', 'description', 'logo',
-            'phone', 'created_at', 'total_products', 'average_rating', 'total_reviews'
+            'id', 'user', 'user_email', 'store_name', 'slug', 'description', 'logo',
+            'cover_image', 'phone', 'created_at', 'total_products', 'average_rating', 'total_reviews'
         ]
 
     def get_total_products(self, obj):

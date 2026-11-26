@@ -7,7 +7,8 @@ from sellers.views import (
     PublicStoreViewSet,
     SellerReviewViewSet,
     SellerCouponViewSet,
-    ValidateCouponView
+    ValidateCouponView,
+    AdminSellerViewSet
 )
 from rest_framework_nested import routers
 
@@ -20,6 +21,7 @@ router.register('stores', PublicStoreViewSet, basename='stores')
 router.register('seller/products', SellerProductViewSet, basename='seller-products')
 router.register('seller/orders', SellerSubOrderViewSet, basename='seller-orders')
 router.register('seller/coupons', SellerCouponViewSet, basename='seller-coupons')
+router.register('admin/sellers', AdminSellerViewSet, basename='admin-sellers')
 
 store_router = routers.NestedDefaultRouter(router, 'stores', lookup='store')
 store_router.register('reviews', SellerReviewViewSet, basename='store-reviews')

@@ -29,11 +29,15 @@ class ProductImageSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True, read_only=True)
     seller = SimpleSellerSerializer(read_only=True)
+    rating = serializers.FloatField(source='average_rating', read_only=True)
+    reviews_count = serializers.IntegerField(source='total_reviews', read_only=True)
+    category_name = serializers.CharField(source='category.name', read_only=True)
 
     class Meta:
         model = Product
         fields = ['id', 'name', 'description', 'price',
-                  'stock', 'category', 'seller', 'price_with_tax', 'images']
+                  'stock', 'category', 'category_name', 'seller', 'price_with_tax', 'images',
+                  'rating', 'reviews_count']
 
     price_with_tax = serializers.SerializerMethodField(
         method_name='calculate_tax')
@@ -65,8 +69,8 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Review
-        fields = ['id', 'user', 'product', 'ratings', 'comment']
-        read_only_fields = ['user', 'product']
+        fields = ['id', 'user', 'product', 'ratings', 'comment', 'created_at', 'updated_at']
+        read_only_fields = ['user', 'product', 'created_at', 'updated_at']
 
     def get_user(self, obj):
         return SimpleUserSerializer(obj.user).data

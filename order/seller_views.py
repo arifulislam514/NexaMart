@@ -11,18 +11,30 @@ from sellers.permissions import IsApprovedSeller
 
 class SellerSubOrderItemSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
+    product_id = serializers.IntegerField(source='product.id', read_only=True)
+    product_image = serializers.SerializerMethodField()
 
     class Meta:
         model = OrderItem
-        fields = ['id', 'product', 'product_name', 'price', 'quantity', 'total_price']
+        fields = ['id', 'product', 'product_id', 'product_name', 'product_image', 'price', 'quantity', 'total_price']
+
+    def get_product_image(self, obj):
+        if obj.product and obj.product.images.exists():
+            first_image = obj.product.images.first()
+            if first_image and first_image.image:
+                request = self.context.get('request')
+                if request:
+                    return request.build_absolute_uri(first_image.image.url)
+                return first_image.image.url
+        return None
 
 
 class SellerSubOrderDetailSerializer(serializers.ModelSerializer):
     items = SellerSubOrderItemSerializer(many=True, read_only=True)
     buyer_email = serializers.EmailField(source='order.user.email', read_only=True)
     buyer_name = serializers.SerializerMethodField()
-    buyer_address = serializers.CharField(source='order.user.address', read_only=True)
-    buyer_phone = serializers.CharField(source='order.user.phone_number', read_only=True)
+    buyer_address = serializers.SerializerMethodField()
+    buyer_phone = serializers.SerializerMethodField()
     order_created_at = serializers.DateTimeField(source='order.created_at', read_only=True)
 
     class Meta:
@@ -38,6 +50,14 @@ class SellerSubOrderDetailSerializer(serializers.ModelSerializer):
     def get_buyer_name(self, obj):
         user = obj.order.user
         return f"{user.first_name} {user.last_name}".strip() or user.email
+
+    def get_buyer_address(self, obj):
+        address = getattr(obj.order.user, 'address', '')
+        return address.strip() if address else "Address provided at checkout"
+
+    def get_buyer_phone(self, obj):
+        phone = getattr(obj.order.user, 'phone_number', '')
+        return phone.strip() if phone else "N/A"
 
 
 class UpdateSubOrderStatusSerializer(serializers.Serializer):
@@ -57,7 +77,7 @@ class SellerSubOrderViewSet(ReadOnlyModelViewSet):
         if getattr(self, 'swagger_fake_view', False):
             return SubOrder.objects.none()
         seller = self.request.user.seller_profile
-        queryset = SubOrder.objects.filter(seller=seller).select_related('order__user').prefetch_related('items__product')
+        queryset = SubOrder.objects.filter(seller=seller).select_related('order__user').prefetch_related('items__product__images')
         status_param = self.request.query_params.get('status')
         if status_param:
             queryset = queryset.filter(status=status_param)

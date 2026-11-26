@@ -1,9 +1,9 @@
 from decimal import Decimal
-from django.db.models import Sum
+from django.db.models import Sum, Q
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly, IsAdminUser
 from rest_framework.generics import RetrieveUpdateAPIView
 from rest_framework.viewsets import ReadOnlyModelViewSet, ModelViewSet
 from rest_framework.decorators import action
@@ -12,6 +12,7 @@ from sellers.models import SellerProfile, SellerReview, SellerCoupon
 from sellers.permissions import IsApprovedSeller
 from sellers.serializers import (
     SellerProfileSerializer,
+    AdminSellerProfileSerializer,
     SellerApplicationSerializer,
     PublicStoreDetailSerializer,
     SellerEarningsSerializer,
@@ -151,9 +152,9 @@ class PublicStoreViewSet(ReadOnlyModelViewSet):
         paginator = DefaultPagination()
         page = paginator.paginate_queryset(products, request)
         if page is not None:
-            serializer = ProductSerializer(page, many=True)
+            serializer = ProductSerializer(page, many=True, context={'request': request})
             return paginator.get_paginated_response(serializer.data)
-        serializer = ProductSerializer(products, many=True)
+        serializer = ProductSerializer(products, many=True, context={'request': request})
         return Response(serializer.data)
 
 
@@ -267,6 +268,56 @@ class ValidateCouponView(APIView):
                 "discount_amount": discount_amount,
                 "cart_amount": cart_amount,
                 "final_amount": final_amount
+            },
+            status=status.HTTP_200_OK
+        )
+
+
+class AdminSellerViewSet(ModelViewSet):
+    """
+    Admin-only ViewSet to list, filter, inspect, approve, and suspend sellers.
+    """
+    queryset = SellerProfile.objects.select_related('user').prefetch_related('products').all().order_by('-created_at')
+    serializer_class = AdminSellerProfileSerializer
+    permission_classes = [IsAdminUser]
+    pagination_class = DefaultPagination
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        status_param = self.request.query_params.get('status')
+        if status_param:
+            queryset = queryset.filter(status=status_param)
+        search = self.request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(store_name__icontains=search) |
+                Q(user__email__icontains=search) |
+                Q(phone__icontains=search)
+            )
+        return queryset
+
+    @action(detail=True, methods=['post'])
+    def approve(self, request, pk=None):
+        seller = self.get_object()
+        seller.status = SellerProfile.STATUS_APPROVED
+        seller.save()
+        return Response(
+            {
+                "message": f"Store '{seller.store_name}' has been approved.",
+                "seller": AdminSellerProfileSerializer(seller).data
+            },
+            status=status.HTTP_200_OK
+        )
+
+    @action(detail=True, methods=['post'])
+    def suspend(self, request, pk=None):
+        seller = self.get_object()
+        seller.status = SellerProfile.STATUS_SUSPENDED
+        seller.save()
+        return Response(
+            {
+                "message": f"Store '{seller.store_name}' has been suspended.",
+                "seller": AdminSellerProfileSerializer(seller).data
             },
             status=status.HTTP_200_OK
         )
