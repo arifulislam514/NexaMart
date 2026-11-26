@@ -1,4 +1,5 @@
 from pathlib import Path
+from datetime import timedelta
 import os
 from dotenv import load_dotenv
 load_dotenv()
@@ -29,17 +30,22 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
+    'drf_yasg',
+    'django_filters',
     "rest_framework",
+    'djoser',
     'api',
     'product',
     'users',
-    'orders',
+    'order',
     "payments",
     "debug_toolbar",
 ]
 
 MIDDLEWARE = [
     "debug_toolbar.middleware.DebugToolbarMiddleware",
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -124,6 +130,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
 STATIC_URL = 'static/'
+MEDIA_URL = '/media/'
+
+MEDIA_ROOT = BASE_DIR / 'media'
 
 
 # Email
@@ -136,6 +145,40 @@ MAILERS = {
 }
 
 
+# Default primary key field type
+# https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
 REST_FRAMEWORK = {
-    'COERCE_DECIMAL_TO_STRING': False
+    'COERCE_DECIMAL_TO_STRING': False,
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
 }
+
+SIMPLE_JWT = {
+    'AUTH_HEADER_TYPES': ('JWT',),
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
+}
+
+DJOSER = {
+    'SERIALIZERS': {
+        'user_create': 'users.serializers.UserCreateSerializer',
+        'current_user': 'users.serializers.UserSerializer'
+    },
+}
+
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header',
+            'description': 'Enter your JWT token in the format: `JWT <your_token>`'
+        }
+    }
+}
+
+# CORS settings
+CORS_ALLOW_ALL_ORIGINS = True  # Allows frontend apps (Vite, React, etc.) to communicate in development
