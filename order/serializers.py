@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from order.models import Cart, CartItem, Order, OrderItem
+from order.models import Cart, CartItem, Order, OrderItem, SubOrder
 from product.models import Product
 from product.serializers import ProductSerializer
 from users.serializers import UserSerializer
@@ -155,10 +155,26 @@ class UpdateOrderSerializer(serializers.ModelSerializer):
         fields = ['status']
 
 
+class SubOrderSerializer(serializers.ModelSerializer):
+    seller_store_name = serializers.CharField(source='seller.store_name', read_only=True)
+    seller_slug = serializers.CharField(source='seller.slug', read_only=True)
+    items = OrderItemSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = SubOrder
+        fields = [
+            'id', 'seller', 'seller_store_name', 'seller_slug',
+            'status', 'tracking_number', 'subtotal', 'commission_rate',
+            'commission_amount', 'seller_earning', 'created_at', 'items'
+        ]
+        read_only_fields = fields
+
+
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
+    sub_orders = SubOrderSerializer(many=True, read_only=True)
     user = UserSerializer(read_only=True)
 
     class Meta:
         model = Order
-        fields = ['id', 'user', 'status', 'total_price', 'created_at', 'items']
+        fields = ['id', 'user', 'status', 'total_price', 'created_at', 'items', 'sub_orders']

@@ -7,5 +7,7 @@ class ProductFilter(FilterSet):
         model = Product
         fields = {
             'category_id': ['exact'],
+            'seller_id': ['exact'],
+            'seller__slug': ['exact'],
             'price': ['gt', 'lt']
         }

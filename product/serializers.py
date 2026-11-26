@@ -2,6 +2,13 @@ from rest_framework import serializers
 from decimal import Decimal
 from product.models import Category, Product, Review, ProductImage
 from django.contrib.auth import get_user_model
+from sellers.models import SellerProfile
+
+
+class SimpleSellerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SellerProfile
+        fields = ['id', 'store_name', 'slug', 'logo']
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -21,11 +28,12 @@ class ProductImageSerializer(serializers.ModelSerializer):
 
 class ProductSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True, read_only=True)
+    seller = SimpleSellerSerializer(read_only=True)
 
     class Meta:
         model = Product
         fields = ['id', 'name', 'description', 'price',
-                  'stock', 'category', 'price_with_tax', 'images']  # other
+                  'stock', 'category', 'seller', 'price_with_tax', 'images']
 
     price_with_tax = serializers.SerializerMethodField(
         method_name='calculate_tax')

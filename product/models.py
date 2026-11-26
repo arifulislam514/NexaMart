@@ -19,6 +19,13 @@ class Product(models.Model):
     stock = models.PositiveIntegerField()
     category = models.ForeignKey(
         Category, on_delete=models.CASCADE, related_name="products")
+    seller = models.ForeignKey(
+        'sellers.SellerProfile',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="products"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
